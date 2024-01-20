@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
   <head>
@@ -24,33 +25,60 @@
       work correctly both with client-side routing and a non-root public URL.
       Learn how to configure a non-root public URL by running `npm run build`.
     -->
+
+    
     <title>Restaurant management</title>
     <head><script type="text/javascript" src="https://www.bing.com/api/maps/mapcontrol?callback=loadMapScenario&key=Ag2tKoYV9UqYnWsarj4CNjH4CDvzeBRqsA9UE5NJqCeidaurjKVY8fi-sk7Fyr-O" async defer></script></head> 
   </head>
   <body>
     <noscript>You need to enable JavaScript to run this app.</noscript>
     <div id="root"></div>
-  
+    
     <script>
-      function loadMapScenario() {
-  var map = new Microsoft.Maps.Map(document.getElementById('map'), {
-    credentials: 'Ag2tKoYV9UqYnWsarj4CNjH4CDvzeBRqsA9UE5NJqCeidaurjKVY8fi-sk7Fyr-O' // Replace with your API key
-  });
+      
 
-  // Add map options and functionalities here
+      function loadMapScenario(restaurants) {
+        console.log("restaurants:", restaurants)
+  if (!!restaurants) {
+    // Check if 'restaurants' is defined and an array
+    restaurants.forEach((restaurant) => {
+      const location = new Microsoft.Maps.Location(restaurant.latitude, restaurant.longitude);
+      const pushpin = new Microsoft.Maps.Pushpin(location, {
+        title: restaurant.name,
+        subTitle: restaurant.address,
+      });
+
+      map.entities.push(pushpin);
+      console.log(restaurants);
+    });
+  } else {
+    console.error('No restaurant data available.'); // Handle the case when 'restaurants' is undefined or not an array
+  }
 }
+      
+
     </script>
+    <script type="text/javascript" src="https://www.bing.com/api/maps/mapcontrol?callback=loadMapScenario&key=Ag2tKoYV9UqYnWsarj4CNjH4CDvzeBRqsA9UE5NJqCeidaurjKVY8fi-sk7Fyr-O" async defer></script>
 
 <div id="map" style="width: 100%; height: 400px;"></div>
-    <!--
-      This HTML file is a template.
-      If you open it directly in the browser, you will see an empty page.
+<script>
 
-      You can add webfonts, meta tags, or analytics to this file.
-      The build step will place the bundled scripts into the <body> tag.
 
-      To begin the development, run `npm start` or `yarn start`.
-      To create a production bundle, use `npm run build` or `yarn build`.
-    -->
+import React, { useState, useEffect } from 'react';
+import axios from 'axios';
+
+  axios.get('http://localhost:3000/api/restaurants')
+  .then((response) => {
+    const restaurantsData = response.data;
+    console.log("responsedata---",restaurantsData)
+    loadMapScenario(restaurantsData);
+    console.log("restaurants---",restaurantsData)
+  })
+  .catch((error) => {
+    console.error('Error fetching restaurants data:', error);
+  });
+  // Assuming 'restaurantsData' contains your restaurant data
+  loadMapScenario(restaurantsData);
+</script>
   </body>
 </html>

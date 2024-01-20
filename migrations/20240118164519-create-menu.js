@@ -13,9 +13,7 @@ module.exports = {
         type: Sequelize.STRING
       },
 
-      restaurantId: {
-        type: Sequelize.INTEGER
-      },
+      
       description: {
         type: Sequelize.TEXT
       },

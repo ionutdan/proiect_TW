@@ -12,14 +12,13 @@ module.exports = (sequelize) => {
       allowNull: false,
     },
     revenue: {
-      type: DataTypes.FLOAT,
+      type: DataTypes.INTEGER,
       allowNull: false,
     },
     expenses: {
-      type: DataTypes.FLOAT,
+      type: DataTypes.INTEGER,
       allowNull: false,
     },
-    // Add more attributes for the restaurant here
   });
 
   return Restaurant;

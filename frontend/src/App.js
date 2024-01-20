@@ -1,3 +1,5 @@
+/* global Microsoft */
+
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
@@ -17,19 +19,81 @@ function App() {
   const [restaurants, setRestaurants] = useState([]);
   const [selectedRestaurant, setSelectedRestaurant] = useState(null);
   const [showAllRestaurants, setShowAllRestaurants] = useState(false);
+  const [allRestaurantMenus, setAllRestaurantMenus] = useState([]);
 
   useEffect(() => {
     // Fetch the list of restaurants when the component mounts
     fetchRestaurants();
+    // Fetch menus for all restaurants
+    fetchAllMenus();
+
+    window.onload = function () {
+      initMap();
+    };
   }, []);
+
+
+  const geocodeAddress = async (address) => {
+    console.log("address: ",address)
+    try {
+      const response = await axios.get('https://dev.virtualearth.net/REST/v1/Locations', {
+        params: {
+          q: address,
+          key: 'Ag2tKoYV9UqYnWsarj4CNjH4CDvzeBRqsA9UE5NJqCeidaurjKVY8fi-sk7Fyr-O',
+        },
+      });
+  
+      const coordinates = response.data.resourceSets[0].resources[0].point.coordinates;
+      console.log("coordinates: ",coordinates)
+      return { lat: coordinates[0], lng: coordinates[1] };
+    } catch (error) {
+      console.error('Error geocoding address:', error);
+      return { lat: 0, lng: 0 }; // Default coordinates if geocoding fails
+    }
+  };
 
   const fetchRestaurants = async () => {
     try {
       const response = await axios.get('http://localhost:3000/api/restaurants');
-      setRestaurants(response.data);
+      console.log(response.data)
+      const restaurantsWithLocation = await Promise.all(
+        response.data.map(async (restaurant) => {
+          // Use the geocoding service to get coordinates based on the address
+          const coordinates = await geocodeAddress(restaurant.address);
+          console.log("coordinates fethc:", coordinates)
+          return { ...restaurant, latitude: coordinates.lat, longitude: coordinates.lng };
+        })
+        
+      );
+      setRestaurants(restaurantsWithLocation);
+      console.log("hdkahgkd",restaurantsWithLocation)
     } catch (error) {
       console.error('Eroare la preluarea restaurantelor:', error);
     }
+  };
+
+  
+
+  const initMap = () => {
+    const mapOptions = {
+      credentials: 'Ag2tKoYV9UqYnWsarj4CNjH4CDvzeBRqsA9UE5NJqCeidaurjKVY8fi-sk7Fyr-O', // Replace with your API key
+      center: new Microsoft.Maps.Location(0, 0), // Set initial center to 0,0 or any default location
+      mapTypeId: Microsoft.Maps.MapTypeId.road, // Set the map type (road, aerial, etc.)
+      zoom: 5, // Set the initial zoom level
+    };
+  
+    const map = new Microsoft.Maps.Map(document.getElementById('map'), mapOptions);
+  
+    // Add a pushpin for each restaurant based on the latitude and longitude
+    restaurants.forEach((restaurant) => {
+      const location = new Microsoft.Maps.Location(restaurant.latitude, restaurant.longitude);
+      const pushpin = new Microsoft.Maps.Pushpin(location, {
+        title: restaurant.name,
+        subTitle: restaurant.address,
+      });
+  
+      map.entities.push(pushpin);
+    });
   };
 
   const handleRestaurantSubmit = async (event) => {
@@ -49,62 +113,53 @@ function App() {
   const handleRestaurantSelect = (restaurant) => {
     // Set the selected restaurant for adding menus
     setSelectedRestaurant(restaurant);
-    // Fetch the menus for the selected restaurant
-   //fetchMenus(restaurant.id);
   };
 
   const handleMenuSubmit = async (event) => {
     event.preventDefault();
-    console.log('Selected Restaurant ID:', selectedRestaurant.id);
 
     try {
       const response = await axios.post(`http://localhost:3000/api/restaurants/${selectedRestaurant.id}/menus/`, menuData);
       console.log('Meniu adăugat cu succes:', response.data);
-      // Clear menu form and refresh the list of menus
+      // Clear menu form and refresh the list of menus for the selected restaurant
       setMenuData({ type: '', items: [] });
-      fetchMenus(selectedRestaurant.id);
+      // Refetch menus for all restaurants
+      fetchAllMenus();
     } catch (error) {
       console.error('Eroare la adăugarea meniului:', error);
     }
   };
 
-  
-
-  const fetchMenus = async (restaurantId) => {
+  const fetchAllMenus = async () => {
     try {
-      // Check this URL to ensure it's correct
-      const response = await axios.get(`http://localhost:3000/api/restaurants/${restaurantId}/menus/`);
-      setSelectedRestaurantMenus(response.data);
+      const response = await axios.get(`http://localhost:3000/api/menus`);
+      setAllRestaurantMenus(response.data);
     } catch (error) {
-      console.error('Eroare la preluarea meniurilor:', error);
+      console.error('Eroare la preluarea tuturor meniurilor:', error);
     }
   };
-
-  const [selectedRestaurantMenus, setSelectedRestaurantMenus] = useState([]);
 
   const handleShowAllRestaurants = () => {
     setShowAllRestaurants(true);
   };
 
-  const handleDeleteAll = async () => {
+  const handleClearDatabase = async () => {
     try {
       const response = await axios.delete('http://localhost:3000/api/delete-all');
       console.log('Toate înregistrările au fost șterse cu succes:', response.data.message);
-  
-      // Opțional, puteți actualiza interfața utilizatorului pentru a reflecta ștergerea
+      // Optionally, you can update the UI to reflect the deletion.
     } catch (error) {
       console.error('Eroare la ștergerea tuturor înregistrărilor:', error);
     }
   };
 
   
-  
+
+ 
 
   return (
-   
     <div>
-      <head><script type="text/javascript" src="https://www.bing.com/api/maps/mapcontrol?callback=loadMapScenario&key=Ag2tKoYV9UqYnWsarj4CNjH4CDvzeBRqsA9UE5NJqCeidaurjKVY8fi-sk7Fyr-O" async defer></script></head> 
-      <button onClick={handleDeleteAll}>Șterge toate înregistrările</button>
+      <button onClick={handleClearDatabase}>Clear Database</button>
       <h1>Adăugare Restaurant</h1>
       <form onSubmit={handleRestaurantSubmit}>
         <input
@@ -133,51 +188,72 @@ function App() {
         />
         <button type="submit">Adaugă Restaurant</button>
       </form>
+      <h2>Toate Restaurantele</h2>
+      <ul>
+        {restaurants.map((restaurant) => (
+          <li key={restaurant.id}>
+            {restaurant.name}{' '}
+            <button onClick={() => handleRestaurantSelect(restaurant)}>Selectează</button>
+          </li>
+        ))}
+      </ul>
 
-      <h1>Adăugare Meniu</h1>
       {selectedRestaurant && (
-        <form onSubmit={handleMenuSubmit}>
-          <input
-            type="text"
-            placeholder="Tip meniu"
-            value={menuData.type}
-            onChange={(e) => setMenuData({ ...menuData, type: e.target.value })}
-          />
-          {/* Adăugați câmpurile pentru produse și prețuri aici */}
-          <button type="submit">Adaugă Meniu</button>
-        </form>
+        <div>
+          <h1>Adăugare Meniu pentru {selectedRestaurant.name}</h1>
+          <form onSubmit={handleMenuSubmit}>
+            <input
+              type="text"
+              placeholder="Tip meniu"
+              value={menuData.type}
+              onChange={(e) => setMenuData({ ...menuData, type: e.target.value })}
+            />
+            <button type="submit">Adaugă Meniu</button>
+          </form>
+        </div>
       )}
 
-      {showAllRestaurants ? (
-        <div>
-          <h2>Toate Restaurantele</h2>
-          <ul>
-            {restaurants.map((restaurant) => (
-              <li key={restaurant.id}>{restaurant.name}</li>
-            ))}
-          </ul>
-          <h2>Meniuri pentru restaurantul selectat</h2>
-          <ul>
-            {selectedRestaurantMenus.map((menu) => (
-              <li key={menu.id}>{menu.type}</li>
-            ))}
-          </ul>
-        </div>
-      ) : (
-        <div>
-          <h2>Restaurante</h2>
-          <ul>
-            {restaurants.map((restaurant) => (
-              <li key={restaurant.id} onClick={() => handleRestaurantSelect(restaurant)}>
-                {restaurant.name}
-              </li>
-            ))}
-          </ul>
-          {selectedRestaurant && (
-            <button onClick={handleShowAllRestaurants}>Arată Toate Restaurantele și Meniurile</button>
-          )}
-        </div>
+      {/* Button to show the table */}
+      {!showAllRestaurants && (
+        <button onClick={handleShowAllRestaurants}>Arată Toate Restaurantele</button>
       )}
+
+      {/* Table */}
+      {showAllRestaurants && (
+        <div>
+          <h2>Toate Restaurantele și Meniurile</h2>
+          <table>
+            <thead>
+              <tr>
+                <th>Nume Restaurant</th>
+                <th>Adresă</th>
+                <th>Încasări</th>
+                <th>Cheltuieli</th>
+                <th>Meniuri</th>
+              </tr>
+            </thead>
+            <tbody>
+              {restaurants.map((restaurant) => (
+                <tr key={restaurant.id}>
+                  <td>{restaurant.name}</td>
+                  <td>{restaurant.address}</td>
+                  <td>{restaurant.revenue}</td>
+                  <td>{restaurant.expenses}</td>
+                  <td>
+                    <ul>
+                      {allRestaurantMenus
+                        .filter((menu) => menu.restaurantId === restaurant.id)
+                        .map((menu) => (
+                          <li key={menu.id}>{menu.type}</li>
+                        ))}
+                    </ul>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+  </div>
+)}
     </div>
   );
 }

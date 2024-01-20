@@ -22,6 +22,14 @@ module.exports = {
       updatedAt: {
         allowNull: false,
         type: Sequelize.DATE
+      },
+      revenue: {
+        allowNull: false,
+        type: Sequelize.FLOAT
+      },
+      expenses: {
+        allowNull: false,
+        type: Sequelize.FLOAT
       }
     });
   },
