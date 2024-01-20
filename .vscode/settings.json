@@ -1,0 +1,33 @@
+{
+    "sqltools.connections": [
+        {
+            "mysqlOptions": {
+                "authProtocol": "default",
+                "enableSsl": "Disabled"
+            },
+            "previewLimit": 50,
+            "server": "localhost",
+            "port": 3000,
+            "driver": "MySQL",
+            "database": "restaurant_db",
+            "username": "username",
+            "name": "ionut",
+            "askForPassword": true
+        },
+        {
+            "mysqlOptions": {
+                "authProtocol": "default",
+                "enableSsl": "Disabled",
+                "ssl": {}
+            },
+            "previewLimit": 50,
+            "server": "http://localhost",
+            "port": 3000,
+            "driver": "MySQL",
+            "name": "ionutd",
+            "database": "restaurant_db",
+            "username": "username",
+            "askForPassword": true
+        }
+    ]
+}
