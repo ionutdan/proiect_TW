@@ -28,57 +28,10 @@
 
     
     <title>Restaurant management</title>
-    <head><script type="text/javascript" src="https://www.bing.com/api/maps/mapcontrol?callback=loadMapScenario&key=Ag2tKoYV9UqYnWsarj4CNjH4CDvzeBRqsA9UE5NJqCeidaurjKVY8fi-sk7Fyr-O" async defer></script></head> 
+    <head></head> 
   </head>
   <body>
     <noscript>You need to enable JavaScript to run this app.</noscript>
     <div id="root"></div>
-    
-    <script>
-      
-
-      function loadMapScenario(restaurants) {
-        console.log("restaurants:", restaurants)
-  if (!!restaurants) {
-    // Check if 'restaurants' is defined and an array
-    restaurants.forEach((restaurant) => {
-      const location = new Microsoft.Maps.Location(restaurant.latitude, restaurant.longitude);
-      const pushpin = new Microsoft.Maps.Pushpin(location, {
-        title: restaurant.name,
-        subTitle: restaurant.address,
-      });
-
-      map.entities.push(pushpin);
-      console.log(restaurants);
-    });
-  } else {
-    console.error('No restaurant data available.'); // Handle the case when 'restaurants' is undefined or not an array
-  }
-}
-      
-
-    </script>
-    <script type="text/javascript" src="https://www.bing.com/api/maps/mapcontrol?callback=loadMapScenario&key=Ag2tKoYV9UqYnWsarj4CNjH4CDvzeBRqsA9UE5NJqCeidaurjKVY8fi-sk7Fyr-O" async defer></script>
-
-<div id="map" style="width: 100%; height: 400px;"></div>
-<script>
-
-
-import React, { useState, useEffect } from 'react';
-import axios from 'axios';
-
-  axios.get('http://localhost:3000/api/restaurants')
-  .then((response) => {
-    const restaurantsData = response.data;
-    console.log("responsedata---",restaurantsData)
-    loadMapScenario(restaurantsData);
-    console.log("restaurants---",restaurantsData)
-  })
-  .catch((error) => {
-    console.error('Error fetching restaurants data:', error);
-  });
-  // Assuming 'restaurantsData' contains your restaurant data
-  loadMapScenario(restaurantsData);
-</script>
   </body>
 </html>

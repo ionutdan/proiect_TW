@@ -1,40 +1,34 @@
-/* global Microsoft */
-
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { ReactBingmaps } from 'react-bingmaps';
 
 function App() {
   const [restaurantData, setRestaurantData] = useState({
     name: '',
     address: '',
-    revenue: 0,
-    expenses: 0,
+    revenue: '',
+    expenses: '',
   });
 
   const [menuData, setMenuData] = useState({
     type: '',
     items: [],
   });
-
+ 
   const [restaurants, setRestaurants] = useState([]);
   const [selectedRestaurant, setSelectedRestaurant] = useState(null);
   const [showAllRestaurants, setShowAllRestaurants] = useState(false);
   const [allRestaurantMenus, setAllRestaurantMenus] = useState([]);
 
   useEffect(() => {
-    // Fetch the list of restaurants when the component mounts
-    fetchRestaurants();
-    // Fetch menus for all restaurants
-    fetchAllMenus();
-
-    window.onload = function () {
-      initMap();
-    };
+   fetchRestaurants();
+   fetchAllMenus();
+  
+    
   }, []);
 
 
   const geocodeAddress = async (address) => {
-    console.log("address: ",address)
     try {
       const response = await axios.get('https://dev.virtualearth.net/REST/v1/Locations', {
         params: {
@@ -44,56 +38,28 @@ function App() {
       });
   
       const coordinates = response.data.resourceSets[0].resources[0].point.coordinates;
-      console.log("coordinates: ",coordinates)
-      return { lat: coordinates[0], lng: coordinates[1] };
+      return [coordinates[0], coordinates[1]];
     } catch (error) {
       console.error('Error geocoding address:', error);
-      return { lat: 0, lng: 0 }; // Default coordinates if geocoding fails
+      return [0, 0]; // Default coordinates if geocoding fails
     }
   };
 
   const fetchRestaurants = async () => {
     try {
       const response = await axios.get('http://localhost:3000/api/restaurants');
-      console.log(response.data)
       const restaurantsWithLocation = await Promise.all(
         response.data.map(async (restaurant) => {
           // Use the geocoding service to get coordinates based on the address
           const coordinates = await geocodeAddress(restaurant.address);
-          console.log("coordinates fethc:", coordinates)
-          return { ...restaurant, latitude: coordinates.lat, longitude: coordinates.lng };
+          return { ...restaurant, location: coordinates, option:{title: restaurant.name} };
         })
-        
+
       );
       setRestaurants(restaurantsWithLocation);
-      console.log("hdkahgkd",restaurantsWithLocation)
     } catch (error) {
       console.error('Eroare la preluarea restaurantelor:', error);
     }
-  };
-
-  
-
-  const initMap = () => {
-    const mapOptions = {
-      credentials: 'Ag2tKoYV9UqYnWsarj4CNjH4CDvzeBRqsA9UE5NJqCeidaurjKVY8fi-sk7Fyr-O', // Replace with your API key
-      center: new Microsoft.Maps.Location(0, 0), // Set initial center to 0,0 or any default location
-      mapTypeId: Microsoft.Maps.MapTypeId.road, // Set the map type (road, aerial, etc.)
-      zoom: 5, // Set the initial zoom level
-    };
-  
-    const map = new Microsoft.Maps.Map(document.getElementById('map'), mapOptions);
-  
-    // Add a pushpin for each restaurant based on the latitude and longitude
-    restaurants.forEach((restaurant) => {
-      const location = new Microsoft.Maps.Location(restaurant.latitude, restaurant.longitude);
-      const pushpin = new Microsoft.Maps.Pushpin(location, {
-        title: restaurant.name,
-        subTitle: restaurant.address,
-      });
-  
-      map.entities.push(pushpin);
-    });
   };
 
   const handleRestaurantSubmit = async (event) => {
@@ -153,9 +119,6 @@ function App() {
     }
   };
 
-  
-
- 
 
   return (
     <div>
@@ -204,11 +167,11 @@ function App() {
           <form onSubmit={handleMenuSubmit}>
             <input
               type="text"
-              placeholder="Tip meniu"
+              placeholder="Produs"
               value={menuData.type}
               onChange={(e) => setMenuData({ ...menuData, type: e.target.value })}
             />
-            <button type="submit">Adaugă Meniu</button>
+            <button type="submit">Adaugă Produs</button>
           </form>
         </div>
       )}
@@ -254,6 +217,15 @@ function App() {
           </table>
   </div>
 )}
+  <div style={{width: "100%", height : 500}}>
+    <ReactBingmaps
+      bingmapKey = "Ag2tKoYV9UqYnWsarj4CNjH4CDvzeBRqsA9UE5NJqCeidaurjKVY8fi-sk7Fyr-O" 
+      center = {[44.43527985, 26.10277939]}
+      pushPins = {restaurants}
+      
+    >
+    </ReactBingmaps>
+  </div>
     </div>
   );
 }
